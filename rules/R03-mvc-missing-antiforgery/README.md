@@ -35,12 +35,17 @@ but it is easy to forget on a new action, which is exactly this misconfiguration
 | POST `/account/email`, no token | 200 `email changed` | 400 |
 | POST `/account/email`, valid token | 200 | 200 |
 
-## Built-in analyzer
+## Tools
 
-CA5391 targets this misconfiguration but does not report the vulnerable variant, even with
-`AnalysisLevel=latest-all`. It only reports when the project already uses an antiforgery
-attribute somewhere, so an app with no antiforgery protection at all gets no warning.
-See [experiments/ca5391-condition](../../experiments/ca5391-condition).
+Three tools have a rule for this misconfiguration and none reports the vulnerable variant:
+
+- **CA5391** (built-in, with `AnalysisLevel=latest-all`) and **CodeQL**
+  `cs/web/missing-token-validation` only report when the project already uses an antiforgery
+  attribute somewhere, so an app with no antiforgery protection at all gets no warning.
+  See [experiments/ca5391-condition](../../experiments/ca5391-condition).
+- **Semgrep** `mvc-missing-antiforgery` does not match `[HttpPost("email")]` (a verb attribute
+  with a route template) and reports the global-filter fix as unprotected.
+  See [experiments/semgrep-mvc-antiforgery](../../experiments/semgrep-mvc-antiforgery).
 
 ## Threat model note
 

@@ -18,6 +18,23 @@ attribute matching `*Validate*Antiforgery*Attribute`.
 So the rule catches "protected most actions, forgot one", but not "never added antiforgery at
 all", which is the more dangerous case.
 
+## CodeQL does the same
+
+CodeQL's `cs/web/missing-token-validation` query (csharp-queries 1.10.2, CodeQL 2.27.3) has the
+same condition, and its source explains why:
+
+```ql
+  // Verify that validate anti forgery token attributes are used somewhere within this project, to
+  // avoid reporting false positives on projects that use an alternative approach to mitigate CSRF
+  // issues.
+  exists(getAValidatedElement())
+```
+
+Both tools trade the fully unprotected case for fewer false positives. Neither rule's
+documentation states the condition. The CodeQL help only hints at it ("Web applications that use
+tokens to prevent cross-site request forgery (CSRF) should validate the tokens for all Http POST
+requests"), and the CA5391 page does not mention it.
+
 ## Reproduce
 
 ```bash

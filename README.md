@@ -10,7 +10,8 @@ misconfigurations where a protection silently does not apply. Each pair differs 
 misconfiguration. A runner starts every app on .NET 8 and .NET 10 and checks the behavior over
 loopback HTTP, and evaluates which tools detect the misconfiguration.
 
-**Status:** 4 rules implemented and verified at runtime. Built-in .NET analyzers evaluated.
+**Status:** 4 rules implemented and verified at runtime. Three tools evaluated: the built-in
+.NET analyzers, Semgrep and CodeQL. None of them detects any of the four misconfigurations.
 More rules and more tools are in progress.
 
 ## Rules
@@ -40,29 +41,48 @@ warning.
 
 ## Tool evaluation
 
-### Built-in .NET and ASP.NET Core analyzers
+A tool detects a rule if it reports a finding on the vulnerable variant that it does not report on
+the fixed one.
 
-.NET SDK 10.0.114 with `AnalysisLevel=latest-all` (every CA rule on, including the security
-rules that are off by default), plus the ASP.NET Core analyzers from the 8.0.33 and 10.0.14
-targeting packs.
+| Rule | Built-in .NET analyzers | Semgrep | CodeQL |
+|---|---|---|---|
+| R01 method override vs antiforgery | not detected | not detected | not detected |
+| R02 rate limiter before routing | not detected | not detected | not detected |
+| R03 MVC without antiforgery | not detected | not detected | not detected |
+| R07 CORS any origin + credentials | not detected | not detected | not detected |
+| **Detected** | **0 of 4** | **0 of 4** | **0 of 4** |
 
-| Rule | .NET 8 | .NET 10 |
-|---|---|---|
-| R01 | not detected | not detected |
-| R02 | not detected | not detected |
-| R03 | not detected | not detected |
-| R07 | not detected | not detected |
+Versions and settings (run in CI on 2026-10-30):
 
-**0 of 8** rule/framework pairs detected, 0 false positives. The analyzers did run: they reported
-style and design rules (CA1050, CA1515, CA2007) on the same projects.
+- **Built-in analyzers:** .NET SDK 10.0.403 with `AnalysisLevel=latest-all` (every CA rule on,
+  including the security rules that are off by default), plus the ASP.NET Core analyzers from the
+  .NET 8 and .NET 10 targeting packs. Run on both frameworks; the same result locally with SDK 10.0.114.
+  The analyzers did run: they reported style and design rules (CA1050, CA1515, CA2007).
+- **Semgrep** 1.183.0 with every C# rule from [semgrep-rules](https://github.com/semgrep/semgrep-rules)
+  (commit 16b9e6d). Its only finding, `missing-or-broken-authorization` on R03, appears on both
+  variants and is unrelated to CSRF: the benchmark apps have no authentication.
+- **CodeQL** 2.27.3, C# `security-extended` suite (csharp-queries 1.10.2), database built from the
+  .NET 10 build. No findings on any variant.
 
-R03 is the notable miss. CA5391 exists for exactly this case, but it only reports when the project
-already uses an antiforgery attribute somewhere, so an MVC app with no antiforgery protection at
-all gets no warning. Reproduction: [experiments/ca5391-condition](experiments/ca5391-condition).
+### Why the CSRF rules stay silent on R03
+
+All three tools have a rule meant for R03, and all three miss it:
+
+- **CA5391** and **CodeQL `cs/web/missing-token-validation`** only report when the project already
+  uses an antiforgery attribute somewhere. The CodeQL query states the reason: to avoid false
+  positives in projects that mitigate CSRF another way. The effect is that an MVC app with no
+  antiforgery protection at all gets no warning from either tool.
+  Reproduction: [experiments/ca5391-condition](experiments/ca5391-condition).
+- **Semgrep `mvc-missing-antiforgery`** does not match a verb attribute with a route template such
+  as `[HttpPost("email")]`, and it reports controllers protected by the global
+  `AutoValidateAntiforgeryToken` filter that the ASP.NET Core docs recommend.
+  Reproduction: [experiments/semgrep-mvc-antiforgery](experiments/semgrep-mvc-antiforgery).
+
+None of the tools has a rule for R01, R02 or R07.
 
 ### Next tools
 
-CodeQL (C#), Semgrep, SonarAnalyzer.CSharp, Security Code Scan, and AI code review.
+SonarAnalyzer.CSharp, Security Code Scan, and AI code review.
 
 ## Running it
 
@@ -74,9 +94,20 @@ dotnet run --project runner -- --tfm net10.0 # one framework only
 dotnet run --project runner -- analyze       # built-in analyzer evaluation
 ```
 
-Outputs go to `results/`: `results.md`/`results.json` (runtime), `analyzers.md`/`analyzers.json`
-(analyzers) and one log per app in `results/logs/`. The runtime mode exits with code 1 if any app
-does not behave as expected.
+Semgrep and CodeQL (Linux, WSL or macOS; CI runs both on every push):
+
+```bash
+git clone --depth 1 https://github.com/semgrep/semgrep-rules /tmp/semgrep-rules
+tools/semgrep.sh /tmp/semgrep-rules sarif/semgrep
+dotnet run --project runner -- score --tool Semgrep --input sarif/semgrep
+
+tools/codeql.sh /path/to/codeql sarif/codeql net10.0
+dotnet run --project runner -- score --tool CodeQL --input sarif/codeql
+```
+
+Outputs go to `results/`: `results.md` (runtime), `analyzers.md`, `semgrep.md`, `codeql.md`, each
+with a `.json` file, and one log per app in `results/logs/`. The runtime mode exits with code 1 if
+any app does not behave as expected. The CI run uploads all results and SARIF files as artifacts.
 
 ## Layout
 
@@ -88,9 +119,11 @@ rules/
     README.md     misconfiguration, fix, expected behavior, references
   R02-..., R03-..., R07-...
 experiments/
-  ca5391-condition/   why CA5391 misses R03
-runner/               BCL-only console app: runtime checks and analyzer evaluation
-results/              generated
+  ca5391-condition/          why CA5391 (and CodeQL) miss R03
+  semgrep-mvc-antiforgery/   why Semgrep misses R03
+runner/                      BCL-only console app: runtime checks, analyzer evaluation, SARIF scoring
+tools/                       Semgrep and CodeQL scan scripts
+results/, sarif/             generated
 ```
 
 ## Method
@@ -108,7 +141,7 @@ results/              generated
    endpoint with authorization metadata, `AllowAnonymous` overriding `Authorize`, JWT validation
    switched off, weak cookie settings, developer exception page outside Development, forwarded
    headers trusting any proxy.
-2. More tools (see above).
+2. More tools: SonarAnalyzer.CSharp, Security Code Scan, AI code review.
 3. Publication: dataset and code on Zenodo, technical report on TechRxiv.
 
 ## Author and license
