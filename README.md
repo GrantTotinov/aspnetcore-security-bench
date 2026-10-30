@@ -1,6 +1,7 @@
 # ASP.NET Core Security Misconfiguration Benchmark
 
 [![benchmark](https://github.com/GrantTotinov/aspnetcore-security-bench/actions/workflows/benchmark.yml/badge.svg)](https://github.com/GrantTotinov/aspnetcore-security-bench/actions/workflows/benchmark.yml)
+[![DOI](https://zenodo.org/badge/1440174108.svg)](https://doi.org/10.5281/zenodo.23822216)
 
 > **The `Vulnerable` apps are insecure on purpose.** They exist to test detection tools.
 > Run them only locally; never deploy them or copy their configuration into a real app.
@@ -146,5 +147,9 @@ results/, sarif/             generated
 
 ## Author and license
 
-Grant Totinov ([@GrantTotinov](https://github.com/GrantTotinov)). MIT license. If you use the
-benchmark, see `CITATION.cff` for how to cite it.
+Grant Totinov ([@GrantTotinov](https://github.com/GrantTotinov),
+ORCID [0009-0002-8014-409X](https://orcid.org/0009-0002-8014-409X)). MIT license.
+
+Archived on Zenodo: [10.5281/zenodo.23822216](https://doi.org/10.5281/zenodo.23822216) (all versions),
+v0.1.0 is [10.5281/zenodo.23822217](https://doi.org/10.5281/zenodo.23822217). If you use the
+benchmark, see `CITATION.cff` or "Cite this repository" on GitHub.

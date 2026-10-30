@@ -12,6 +12,14 @@ authors:
     given-names: Grant
     orcid: "https://orcid.org/0009-0002-8014-409X"
 license: MIT
+doi: 10.5281/zenodo.23822216
+identifiers:
+  - type: doi
+    value: 10.5281/zenodo.23822216
+    description: All versions (concept DOI)
+  - type: doi
+    value: 10.5281/zenodo.23822217
+    description: Version v0.1.0
 repository-code: "https://github.com/GrantTotinov/aspnetcore-security-bench"
 keywords:
   - ASP.NET Core
