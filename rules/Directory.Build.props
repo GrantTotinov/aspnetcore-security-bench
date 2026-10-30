@@ -1,0 +1,11 @@
+<Project>
+  <!-- Every rule app is built for both LTS lines so behavior can be compared across versions. -->
+  <PropertyGroup>
+    <TargetFrameworks>net8.0;net10.0</TargetFrameworks>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <IsPackable>false</IsPackable>
+    <!-- The runner starts each app with `dotnet App.dll`, so no native launcher is needed. -->
+    <UseAppHost>false</UseAppHost>
+  </PropertyGroup>
+</Project>

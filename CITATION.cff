@@ -1,0 +1,24 @@
+cff-version: 1.2.0
+message: "If you use this benchmark, please cite it as below."
+type: software
+title: "ASP.NET Core Security Misconfiguration Benchmark"
+abstract: >-
+  Pairs of minimal ASP.NET Core apps, one vulnerable and one fixed, for security
+  misconfigurations where a protection silently does not apply, with a runner that
+  verifies the behavior on .NET 8 and .NET 10 and evaluates whether static analysis
+  tools detect each misconfiguration.
+authors:
+  - family-names: Totinov
+    given-names: Grant
+    orcid: "https://orcid.org/0009-0002-8014-409X"
+license: MIT
+repository-code: "https://github.com/GrantTotinov/aspnetcore-security-bench"
+keywords:
+  - ASP.NET Core
+  - .NET
+  - security misconfiguration
+  - static analysis
+  - benchmark
+  - CSRF
+  - CORS
+  - rate limiting
