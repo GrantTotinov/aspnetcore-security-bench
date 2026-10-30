@@ -9,12 +9,14 @@ on:
 permissions:
   contents: read
 
+env:
+  DOTNET_NOLOGO: "1"
+  DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+
 jobs:
-  run:
+  runtime-and-analyzers:
+    name: Runtime checks and built-in analyzers
     runs-on: ubuntu-24.04
-    env:
-      DOTNET_NOLOGO: "1"
-      DOTNET_CLI_TELEMETRY_OPTOUT: "1"
     steps:
       - uses: actions/checkout@v4
 
@@ -25,20 +27,115 @@ jobs:
             10.0.x
 
       - name: Runtime checks (.NET 8 and 10)
-        run: dotnet run --project runner -c Release
+        run: |
+          dotnet run --project runner -c Release
+          echo "::notice title=Runtime checks::All variants behaved as expected on .NET 8 and .NET 10"
 
       - name: Built-in analyzers
         run: dotnet run --project runner -c Release -- analyze
 
-      - name: Job summary
+      - name: Summary
         if: always()
         run: |
           for f in results/results.md results/analyzers.md; do
             if [ -f "$f" ]; then cat "$f" >> "$GITHUB_STEP_SUMMARY"; fi
           done
+          if [ -f results/analyzers.summary.txt ]; then
+            echo "::notice title=Built-in analyzers::$(cat results/analyzers.summary.txt)"
+          fi
 
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: results
+          name: runtime-and-analyzers
           path: results/
+
+  semgrep:
+    name: Semgrep
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Install Semgrep and fetch the public rules
+        run: |
+          pip install semgrep
+          git clone --depth 1 https://github.com/semgrep/semgrep-rules "$RUNNER_TEMP/semgrep-rules"
+          echo "RULES_SHA=$(git -C "$RUNNER_TEMP/semgrep-rules" rev-parse --short HEAD)" >> "$GITHUB_ENV"
+
+      - name: Scan
+        run: tools/semgrep.sh "$RUNNER_TEMP/semgrep-rules" sarif/semgrep
+
+      - name: Score
+        run: dotnet run --project runner -c Release -- score --tool Semgrep --input sarif/semgrep
+
+      - name: Summary
+        if: always()
+        run: |
+          if [ -f results/semgrep.md ]; then
+            cat results/semgrep.md >> "$GITHUB_STEP_SUMMARY"
+            echo "semgrep-rules commit: $RULES_SHA" >> "$GITHUB_STEP_SUMMARY"
+          fi
+          if [ -f results/semgrep.summary.txt ]; then
+            echo "::notice title=Semgrep (rules $RULES_SHA)::$(cat results/semgrep.summary.txt)"
+          fi
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: semgrep
+          path: |
+            sarif/semgrep/
+            results/
+
+  codeql:
+    name: CodeQL
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            8.0.x
+            10.0.x
+
+      - name: Locate the CodeQL CLI
+        run: |
+          codeql=$(ls -d /opt/hostedtoolcache/CodeQL/*/x64/codeql/codeql 2>/dev/null | sort -V | tail -1 || true)
+          if [ -z "$codeql" ]; then
+            curl -sSL -o "$RUNNER_TEMP/codeql.tar.zst" \
+              https://github.com/github/codeql-action/releases/latest/download/codeql-bundle-linux64.tar.zst
+            tar --use-compress-program=unzstd -xf "$RUNNER_TEMP/codeql.tar.zst" -C "$RUNNER_TEMP"
+            codeql="$RUNNER_TEMP/codeql/codeql"
+          fi
+          echo "CODEQL=$codeql" >> "$GITHUB_ENV"
+
+      - name: Create databases and analyze (security-extended)
+        run: tools/codeql.sh "$CODEQL" sarif/codeql net10.0
+
+      - name: Score
+        run: dotnet run --project runner -c Release -- score --tool CodeQL --input sarif/codeql
+
+      - name: Summary
+        if: always()
+        run: |
+          if [ -f results/codeql.md ]; then cat results/codeql.md >> "$GITHUB_STEP_SUMMARY"; fi
+          if [ -f results/codeql.summary.txt ]; then
+            echo "::notice title=CodeQL::$(cat results/codeql.summary.txt)"
+          fi
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: codeql
+          path: |
+            sarif/codeql/
+            results/

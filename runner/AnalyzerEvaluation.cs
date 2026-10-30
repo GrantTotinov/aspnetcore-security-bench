@@ -74,6 +74,23 @@ static class AnalyzerEvaluation
         await File.WriteAllTextAsync(Path.Combine(resultsDir, "analyzers.md"), markdown);
         await File.WriteAllTextAsync(Path.Combine(resultsDir, "analyzers.json"),
             JsonSerializer.Serialize(new { sdk, results }, new JsonSerializerOptions { WriteIndented = true }));
+
+        // One compact line, e.g. "Built-in analyzers (SDK 10.0.114): R01/net8.0=no R01/net10.0=no ... | fixed: none".
+        var pairs = rules.SelectMany(r => tfms.Select(t => (Rule: r.Id, Tfm: t))).Select(p =>
+        {
+            var vulnerable = results.Single(r => r.Rule == p.Rule && r.Variant == "Vulnerable" && r.Tfm == p.Tfm);
+            var fixedVariant = results.Single(r => r.Rule == p.Rule && r.Variant == "Fixed" && r.Tfm == p.Tfm);
+            var fixedIds = fixedVariant.Diagnostics.Where(d => d.Security).Select(d => d.Id).ToHashSet();
+            var detected = vulnerable.Diagnostics.Where(d => d.Security && !fixedIds.Contains(d.Id)).Select(d => d.Id).Distinct().ToList();
+            return (p.Rule, p.Tfm, detected, fixedIds);
+        }).ToList();
+        var compact = $"Built-in analyzers (SDK {sdk}): " +
+            string.Join(" ", pairs.Select(p => $"{p.Rule}/{p.Tfm}={(p.detected.Count > 0 ? $"yes({string.Join(",", p.detected)})" : "no")}")) +
+            " | reported on Fixed: " +
+            (pairs.Any(p => p.fixedIds.Count > 0)
+                ? string.Join(" ", pairs.Where(p => p.fixedIds.Count > 0).Select(p => $"{p.Rule}/{p.Tfm}({string.Join(",", p.fixedIds)})"))
+                : "none");
+        await File.WriteAllTextAsync(Path.Combine(resultsDir, "analyzers.summary.txt"), compact + Environment.NewLine);
         return 0;
     }
 

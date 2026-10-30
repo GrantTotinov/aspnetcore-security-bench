@@ -10,6 +10,8 @@
 //   dotnet run --project runner -- --tfm net10.0     one framework only
 //   dotnet run --project runner -- --no-build        reuse existing builds
 //   dotnet run --project runner -- analyze           built-in .NET and ASP.NET Core analyzers
+//   dotnet run --project runner -- score --tool Semgrep --input sarif/semgrep
+//                                                    score an external tool from <Rule>.<Variant>.sarif files
 //   add --no-restore to either mode to build without contacting NuGet
 
 using System.Diagnostics;
@@ -30,6 +32,14 @@ var rules = new List<Rule>
 string[] variants = ["Vulnerable", "Fixed"];
 
 var root = FindRoot();
+
+if (args.Contains("score"))
+{
+    var tool = ArgValue(args, "--tool") ?? throw new ArgumentException("score needs --tool <name>");
+    var input = ArgValue(args, "--input") ?? throw new ArgumentException("score needs --input <folder with SARIF files>");
+    return await SarifScoring.RunAsync(root, rules, variants, tool, Path.GetFullPath(input), Path.Combine(root, "results"));
+}
+
 var noBuild = args.Contains("--no-build");
 var noRestore = args.Contains("--no-restore");
 var requestedTfms = ArgValue(args, "--tfm")?.Split(',', StringSplitOptions.RemoveEmptyEntries)
