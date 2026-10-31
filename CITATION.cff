@@ -1,12 +1,13 @@
 cff-version: 1.2.0
-message: "If you use this benchmark, please cite it as below."
+message: "If you use this study, please cite the report as below."
 type: software
-title: "ASP.NET Core Security Misconfiguration Benchmark"
+title: "When Protections Silently Do Not Apply: A Benchmark of ASP.NET Core Security Misconfigurations and the Tools That Miss Them"
 abstract: >-
   Pairs of minimal ASP.NET Core apps, one vulnerable and one fixed, for security
-  misconfigurations where a protection silently does not apply, with a runner that
-  verifies the behavior on .NET 8 and .NET 10 and evaluates whether static analysis
-  tools detect each misconfiguration.
+  misconfigurations where a protection silently does not apply, verified at runtime
+  on .NET 8 and .NET 10, with an evaluation showing that the built-in .NET analyzers,
+  Semgrep and CodeQL detect none of them. The repository contains the report and
+  all the code it describes.
 authors:
   - family-names: Totinov
     given-names: Grant
@@ -19,7 +20,7 @@ identifiers:
     description: All versions (concept DOI)
   - type: doi
     value: 10.5281/zenodo.23822217
-    description: Version v0.1.0
+    description: Version v0.1.0 (code only, before the report)
 repository-code: "https://github.com/GrantTotinov/aspnetcore-security-bench"
 keywords:
   - ASP.NET Core
@@ -30,3 +31,14 @@ keywords:
   - CSRF
   - CORS
   - rate limiting
+preferred-citation:
+  type: report
+  title: "When Protections Silently Do Not Apply: A Benchmark of ASP.NET Core Security Misconfigurations and the Tools That Miss Them"
+  authors:
+    - family-names: Totinov
+      given-names: Grant
+      orcid: "https://orcid.org/0009-0002-8014-409X"
+  year: 2026
+  doi: 10.5281/zenodo.23822216
+  url: "https://doi.org/10.5281/zenodo.23822216"
+  repository-code: "https://github.com/GrantTotinov/aspnetcore-security-bench"

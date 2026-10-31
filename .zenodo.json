@@ -1,0 +1,28 @@
+{
+  "title": "When Protections Silently Do Not Apply: A Benchmark of ASP.NET Core Security Misconfigurations and the Tools That Miss Them",
+  "upload_type": "publication",
+  "publication_type": "report",
+  "description": "<p>ASP.NET Core lets developers turn on protections such as antiforgery validation, rate limiting and CORS with a few lines of configuration. When those lines are ordered or combined incorrectly, the protection can stop applying while the application starts normally, serves requests and logs nothing. This report presents a benchmark of such silent misconfigurations: pairs of minimal ASP.NET Core applications that differ only in one misconfiguration, each verified at runtime on .NET 8 and .NET 10.</p><p>The first release covers four misconfigurations: a form-field HTTP method override that bypasses antiforgery validation, a rate limiter registered before routing, an MVC controller without antiforgery validation, and a CORS policy that grants any origin credentialed access. Three static analysis tools were evaluated: the .NET SDK's built-in analyzers with every rule enabled, Semgrep with its public C# rules, and CodeQL with its C# security-extended suite.</p><p>None of the tools detected any of the four misconfigurations. All three ship a rule for the MVC antiforgery case, yet each misses it. Two of them, by design, stay silent in projects that never use an antiforgery attribute, so the application with no protection at all gets no warning. The third does not match a common attribute syntax and also flags the recommended fix.</p><p>This record contains the report (paper/report.pdf, source in paper/report.md) together with everything it describes: the vulnerable and fixed applications, the runtime verification runner, the Semgrep and CodeQL scan scripts, the reproductions and the continuous integration workflow.</p>",
+  "creators": [
+    {
+      "name": "Totinov, Grant",
+      "affiliation": "Independent Researcher",
+      "orcid": "0009-0002-8014-409X"
+    }
+  ],
+  "license": "mit",
+  "access_right": "open",
+  "language": "eng",
+  "keywords": [
+    "ASP.NET Core",
+    ".NET",
+    "security misconfiguration",
+    "static analysis",
+    "benchmark",
+    "CSRF",
+    "CORS",
+    "rate limiting",
+    "CodeQL",
+    "Semgrep"
+  ]
+}

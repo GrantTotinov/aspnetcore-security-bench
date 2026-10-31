@@ -1,10 +1,22 @@
-# ASP.NET Core Security Misconfiguration Benchmark
+# When Protections Silently Do Not Apply
+
+**A Benchmark of ASP.NET Core Security Misconfigurations and the Tools That Miss Them**
 
 [![benchmark](https://github.com/GrantTotinov/aspnetcore-security-bench/actions/workflows/benchmark.yml/badge.svg)](https://github.com/GrantTotinov/aspnetcore-security-bench/actions/workflows/benchmark.yml)
 [![DOI](https://zenodo.org/badge/1440174108.svg)](https://doi.org/10.5281/zenodo.23822216)
 
+This repository is one study: the report and all the code it describes.
+
+**Report:** [paper/report.pdf](paper/report.pdf) (source: [paper/report.md](paper/report.md))
+
+Four ASP.NET Core misconfigurations each disable a protection at runtime on .NET 8 and .NET 10
+without any warning, and the built-in .NET analyzers, Semgrep and CodeQL detect none of them. All
+three tools ship a rule for the MVC antiforgery case, yet each misses it.
+
 > **The `Vulnerable` apps are insecure on purpose.** They exist to test detection tools.
 > Run them only locally; never deploy them or copy their configuration into a real app.
+
+## The benchmark
 
 Pairs of minimal ASP.NET Core apps, one **vulnerable** and one **fixed**, for security
 misconfigurations where a protection silently does not apply. Each pair differs only in the
@@ -113,6 +125,9 @@ any app does not behave as expected. The CI run uploads all results and SARIF fi
 ## Layout
 
 ```
+paper/
+  report.pdf        the report
+  report.md         its source text
 rules/
   R01-method-override-antiforgery/
     Vulnerable/   Program.cs, R01.Vulnerable.csproj
@@ -150,6 +165,6 @@ results/, sarif/             generated
 Grant Totinov ([@GrantTotinov](https://github.com/GrantTotinov),
 ORCID [0009-0002-8014-409X](https://orcid.org/0009-0002-8014-409X)). MIT license.
 
-Archived on Zenodo: [10.5281/zenodo.23822216](https://doi.org/10.5281/zenodo.23822216) (all versions),
-v0.1.0 is [10.5281/zenodo.23822217](https://doi.org/10.5281/zenodo.23822217). If you use the
-benchmark, see `CITATION.cff` or "Cite this repository" on GitHub.
+The report and the code are archived together on Zenodo as one record:
+[10.5281/zenodo.23822216](https://doi.org/10.5281/zenodo.23822216) (all versions). If you use the
+study, cite the report: see `CITATION.cff` or "Cite this repository" on GitHub.
